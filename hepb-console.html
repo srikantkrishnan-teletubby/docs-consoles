@@ -37,7 +37,8 @@
     "R1": { "reason": "Missing Information", "text": "The Hep B Documentation OR Hep B Declination you submitted was rejected because your complete name was missing. Please make the necessary adjustments and submit a new Hep B Documentation OR Hep B Declination showing your complete name." },
     "R2": { "reason": "Missing Information", "text": "The Hep B Documentation OR Hep B Declination you submitted was rejected because the declination did not state a religious or medical reason. Please submit a declination that states your reason, or submit proof of Hep B vaccination / immunity." },
     "R3": { "reason": "Missing Information", "text": "The Hep B Documentation OR Hep B Declination you submitted was rejected because it does not show your immunity to Hep B, nor was Hep B Vaccination administered. Please submit a new document showing proof the Hep B vaccination was administered or that you are immune to Hep B." },
-    "R5": { "reason": "Missing Information", "text": "The Hep B Documentation you submitted was rejected. The result does not confirm immunity to Hepatitis B. A Negative Surface Antigen only confirms no current infection. To proceed, submit: (1) a Positive Hepatitis B Surface Antibody (anti-HBs) result, (2) Hep B vaccination records, or (3) a signed Hep B Declination form." },
+    "R5_both": { "reason": "Missing Information", "text": "The Hep B Documentation you submitted was rejected. The result does not confirm immunity to Hepatitis B. A Negative Surface Antigen only confirms no current infection. To proceed, submit: (1) a Positive Hepatitis B Surface Antibody (anti-HBs) result, (2) Hep B vaccination records, or (3) a signed Hep B Declination form." },
+    "R5_doconly": { "reason": "Missing Information", "text": "The Hep B Documentation you submitted was rejected. The result does not confirm immunity to Hepatitis B. A Negative Surface Antigen only confirms no current infection. To proceed, submit: (1) a Positive Hepatitis B Surface Antibody (anti-HBs) result, or (2) Hep B vaccination records." },
     "R6": { "reason": "Incorrect Document", "text": "The Hep B Documentation you submitted has been rejected because it is not the correct type of document. It appears to be a Hep B Declination instead of the Hep B Documentation that was requested. Please upload a valid Hep B Documentation for review." },
     "M1": { "reason": "More Testing Needed", "text": "Your Hep B blood test indicates a result that needs further evaluation (active infection or possible past exposure). This is not a document rejection. Please consult a doctor who is knowledgeable about Hep B for additional testing. Once you have updated results, submit a new document showing immunity (Positive Surface Antibody) or completed vaccination, or a signed Hep B Declination form." }
   }
@@ -470,7 +471,9 @@ function evaluate(){
       else R.reasons.push({k:'warn',t:'Core Antibody positive with no immunity shown — the table\'s "Could be Infected" case. More Testing Needed.',ref:'§3.3 table'});
       return term(R,'moretest',bv.code);
     }
-    R.reasons.push({k:'fail',t:'No immunity proven. Surface Antigen and Antibody both non-positive, and no Core Antibody / vaccination proof. A negative Surface Antigen alone does not confirm immunity.',ref:'§3.3'});
+    var abDesc=S.blood.ab==='neg'?'Surface Antibody Negative':S.blood.ab==='nr'?'Surface Antibody not shown on document':'Surface Antibody non-positive';
+    var coreDesc=S.blood.core==='neg'?'Core Antibody Negative':S.blood.core==='nr'?'Core Antibody not shown on document':'Core Antibody non-positive';
+    R.reasons.push({k:'fail',t:'No immunity proven. Surface Antigen Negative (no active infection), '+abDesc+' (immunity not confirmed), '+coreDesc+'. A negative Surface Antigen alone does not confirm immunity.',ref:'§3.3'});
     return term(R,'reject',bv.code);
   }
   return R;
@@ -538,9 +541,10 @@ function render(){
   }).join(''); }
 
   var no=$('noteOut');
-  if((R.verdict==='reject'||R.verdict==='moretest') && R.code && CONFIG.notes[R.code]){
+  var noteKey=R.code==='R5'?(S.cat==='doconly'?'R5_doconly':'R5_both'):R.code;
+  if((R.verdict==='reject'||R.verdict==='moretest') && noteKey && CONFIG.notes[noteKey]){
     show(no,true);
-    var nd=CONFIG.notes[R.code];
+    var nd=CONFIG.notes[noteKey];
     var isRej=R.verdict==='reject';
     no.className='note-out '+(isRej?'rej':'mt');
     no.innerHTML='<h4><span>'+(isRej?'Pre-filled rejection note':nd.reason+' — message to send')+'</span><span class="rcode">'+R.code+'</span></h4>'
