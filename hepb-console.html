@@ -1,15 +1,13 @@
 <!DOCTYPE html>
 <!--
-  Hep B Validation Console (standalone)
-  ─────────────────────────────────────
-  Agent decision-support tool for Hep B Documentation tickets.
-  SOP-faithful: branches on what the document proves; blood test follows
-  the §3.3 interpretation table (Surface Antibody = immunity; Surface
-  Antigen positive / Core-only positive = more testing; otherwise reject).
-
-  Rules live in the CONFIG block below (validity periods, decision
-  outcomes, message text). Edit those values and re-open the file — no
-  need to touch the logic. The decision-tree SHAPE is fixed in the engine.
+  Hep B Validation Console v3
+  ────────────────────────────
+  Changes from v2:
+  1. Blood panels now show all lab aliases (HBsAg / Hep B Surf AG etc.)
+  2. Plain-English "what this means" line under each blood panel header
+  3. Vaccination subtype card shows inline doc-type guidance on selection
+  4. R5 note is category-aware (no declination option under Doc Only)
+  5. Trail message distinguishes "not shown" from "non-positive"
 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -18,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
-<!-- ════════════════ CONFIG (edit these values) ════════════════ -->
+<!-- ════════════════ CONFIG ════════════════ -->
 <script id="hepb-config" type="application/json">
 {
   "validity": {
@@ -37,7 +35,7 @@
     "R1": { "reason": "Missing Information", "text": "The Hep B Documentation OR Hep B Declination you submitted was rejected because your complete name was missing. Please make the necessary adjustments and submit a new Hep B Documentation OR Hep B Declination showing your complete name." },
     "R2": { "reason": "Missing Information", "text": "The Hep B Documentation OR Hep B Declination you submitted was rejected because the declination did not state a religious or medical reason. Please submit a declination that states your reason, or submit proof of Hep B vaccination / immunity." },
     "R3": { "reason": "Missing Information", "text": "The Hep B Documentation OR Hep B Declination you submitted was rejected because it does not show your immunity to Hep B, nor was Hep B Vaccination administered. Please submit a new document showing proof the Hep B vaccination was administered or that you are immune to Hep B." },
-    "R5_both": { "reason": "Missing Information", "text": "The Hep B Documentation you submitted was rejected. The result does not confirm immunity to Hepatitis B. A Negative Surface Antigen only confirms no current infection. To proceed, submit: (1) a Positive Hepatitis B Surface Antibody (anti-HBs) result, (2) Hep B vaccination records, or (3) a signed Hep B Declination form." },
+    "R5_both":    { "reason": "Missing Information", "text": "The Hep B Documentation you submitted was rejected. The result does not confirm immunity to Hepatitis B. A Negative Surface Antigen only confirms no current infection. To proceed, submit: (1) a Positive Hepatitis B Surface Antibody (anti-HBs) result, (2) Hep B vaccination records, or (3) a signed Hep B Declination form." },
     "R5_doconly": { "reason": "Missing Information", "text": "The Hep B Documentation you submitted was rejected. The result does not confirm immunity to Hepatitis B. A Negative Surface Antigen only confirms no current infection. To proceed, submit: (1) a Positive Hepatitis B Surface Antibody (anti-HBs) result, or (2) Hep B vaccination records." },
     "R6": { "reason": "Incorrect Document", "text": "The Hep B Documentation you submitted has been rejected because it is not the correct type of document. It appears to be a Hep B Declination instead of the Hep B Documentation that was requested. Please upload a valid Hep B Documentation for review." },
     "M1": { "reason": "More Testing Needed", "text": "Your Hep B blood test indicates a result that needs further evaluation (active infection or possible past exposure). This is not a document rejection. Please consult a doctor who is knowledgeable about Hep B for additional testing. Once you have updated results, submit a new document showing immunity (Positive Surface Antibody) or completed vaccination, or a signed Hep B Declination form." }
@@ -55,6 +53,7 @@
   --accept:#166534;--accept-bg:#eaf6ee;--accept-line:#b6dfc2;
   --reject:#991b1b;--reject-bg:#fdecea;--reject-line:#f0bebe;
   --amber:#92400e;--amber-bg:#fef3e2;--amber-line:#f0d49a;
+  --blue:#1e40af;--blue-bg:#eff6ff;--blue-line:#bfdbfe;
   --r:10px;
   --mono:'IBM Plex Mono',ui-monospace,monospace;
   --sans:'IBM Plex Sans',system-ui,sans-serif;
@@ -64,6 +63,7 @@ html,body{margin:0}
 body{font-family:var(--sans);color:var(--ink);background:var(--paper);line-height:1.5;-webkit-font-smoothing:antialiased}
 .wrap{max-width:1160px;margin:0 auto;padding:20px 18px 80px}
 
+/* header */
 .head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px}
 .brand{display:flex;align-items:center;gap:13px}
 .glyph{width:42px;height:42px;border-radius:9px;flex:0 0 auto;background:linear-gradient(150deg,#0a7c6e,#085f54);display:grid;place-items:center;color:#fff;box-shadow:0 2px 0 rgba(8,95,84,.35)}
@@ -73,6 +73,7 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
 .btn{font-family:var(--sans);font-size:12.5px;font-weight:600;border:1px solid var(--line-s);background:var(--surface);color:var(--ink-2);padding:7px 13px;border-radius:8px;cursor:pointer;transition:.12s}
 .btn:hover{border-color:var(--teal);color:var(--teal-d)}
 
+/* progress rail */
 .rail{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
 .rail .seg{flex:1 1 100px;font-size:11px;font-weight:600;color:var(--muted-2);padding:7px 10px 8px;border-radius:7px;background:var(--surface);border:1px solid var(--line);display:flex;align-items:center;gap:7px;transition:.15s}
 .rail .seg .n{width:17px;height:17px;border-radius:4px;background:var(--paper);color:var(--muted);display:grid;place-items:center;font-size:10px;font-family:var(--mono);flex:0 0 auto}
@@ -81,9 +82,11 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
 .rail .seg.done .n{background:var(--accept);color:#fff}
 .rail .seg.done{color:var(--ink-2)}
 
+/* layout */
 .grid{display:grid;grid-template-columns:1.3fr 1fr;gap:18px;align-items:start}
 @media(max-width:840px){.grid{grid-template-columns:1fr}}
 
+/* cards */
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:17px 17px 18px;margin-bottom:13px}
 .card.hidden{display:none}
 .lbl{font-size:10px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2);font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:12px}
@@ -91,32 +94,51 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
 .q{font-size:14px;font-weight:600;margin:0 0 11px;letter-spacing:-.005em}
 .hint{font-size:12px;color:var(--muted);margin:-5px 0 11px}
 
+/* options */
 .opts{display:grid;gap:7px}
 .opts.cols{grid-template-columns:1fr 1fr}
 @media(max-width:500px){.opts.cols{grid-template-columns:1fr}}
-.opt{text-align:left;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--ink-2);border:1px solid var(--line-s);background:var(--surface);border-radius:8px;padding:10px 12px;cursor:pointer;transition:.12s;display:flex;align-items:center;gap:10px}
+.opt{text-align:left;font-family:var(--sans);font-size:13px;font-weight:500;color:var(--ink-2);border:1px solid var(--line-s);background:var(--surface);border-radius:8px;padding:10px 12px;cursor:pointer;transition:.12s;display:flex;align-items:flex-start;gap:10px}
 .opt:hover{border-color:var(--teal);background:var(--paper-2)}
 .opt:focus-visible{outline:2px solid var(--teal);outline-offset:2px}
-.tick{width:15px;height:15px;border-radius:50%;border:2px solid var(--line-s);flex:0 0 auto;transition:.12s}
+.tick{width:15px;height:15px;border-radius:50%;border:2px solid var(--line-s);flex:0 0 auto;transition:.12s;margin-top:2px}
 .opt.sel{border-color:var(--teal);background:var(--teal-s);color:var(--teal-d);font-weight:600}
 .opt.sel .tick{border-color:var(--teal);background:var(--teal);box-shadow:inset 0 0 0 3px var(--teal-s)}
-.opt .sm{font-size:11px;color:var(--muted);font-weight:500;margin-left:auto;font-family:var(--mono)}
+.opt-body{flex:1;min-width:0}
+.opt-title{font-size:13px;font-weight:500}
+.opt.sel .opt-title{font-weight:600}
+.opt-sub{font-size:11px;color:var(--muted);margin-top:2px;font-weight:400;line-height:1.4}
+.opt.sel .opt-sub{color:var(--teal-d)}
+.opt .sm{font-size:11px;color:var(--muted);font-weight:500;margin-left:auto;font-family:var(--mono);flex:0 0 auto}
 .opt.sel .sm{color:var(--teal-d)}
 
+/* inline guidance box — appears after vax type selection */
+.guide{margin-top:10px;border-radius:8px;background:var(--blue-bg);border:1px solid var(--blue-line);padding:11px 13px;display:none}
+.guide.show{display:block}
+.guide-head{font-size:11px;font-weight:700;color:var(--blue);letter-spacing:.04em;text-transform:uppercase;margin-bottom:6px}
+.guide-row{display:flex;gap:8px;font-size:12px;color:var(--ink-2);padding:4px 0;border-bottom:1px solid var(--blue-line)}
+.guide-row:last-child{border-bottom:0}
+.guide-k{font-weight:600;min-width:110px;flex:0 0 auto}
+.guide-v{color:var(--muted)}
+
+/* blood panel */
 .blood-panel{margin-top:8px;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
-.bp-head{background:var(--ink-2);color:#d8eaea;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:8px 13px;display:flex;align-items:center;gap:8px}
-.bp-head svg{width:13px;height:13px;opacity:.7}
-.bp-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 13px;border-bottom:1px solid var(--line);align-items:start}
+.bp-head{background:var(--ink-2);color:#d8eaea;padding:10px 13px}
+.bp-head-title{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;display:flex;align-items:center;gap:8px}
+.bp-head svg{width:13px;height:13px;opacity:.7;flex:0 0 auto}
+.bp-head-sub{font-size:11px;color:#7fbdb6;margin-top:3px;font-weight:500;line-height:1.4}
+.bp-row{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 13px;border-bottom:1px solid var(--line);align-items:start}
 .bp-row:last-of-type{border-bottom:0}
-.bp-label{font-size:12.5px;font-weight:600;color:var(--ink-2)}
-.bp-tag{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:500}
-.bp-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.bp-label{font-size:12.5px;font-weight:700;color:var(--ink-2)}
+.bp-aliases{font-family:var(--mono);font-size:10.5px;color:var(--muted);font-weight:500;margin-top:2px;line-height:1.5}
+.bp-meaning-line{font-size:11px;color:var(--muted);margin-top:3px;line-height:1.4}
+.bp-meaning-line b{color:var(--ink-2);font-weight:600}
 .bp-meaning{font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;white-space:nowrap;font-family:var(--mono);align-self:center}
 .bp-meaning.good{background:var(--accept-bg);color:var(--accept);border:1px solid var(--accept-line)}
 .bp-meaning.bad{background:var(--reject-bg);color:var(--reject);border:1px solid var(--reject-line)}
 .bp-meaning.warn{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line)}
 .bp-meaning.unknown{background:var(--paper);color:var(--muted-2);border:1px solid var(--line)}
-.bp-opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.bp-opts{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
 .bp-btn{font-family:var(--sans);font-size:12px;font-weight:600;padding:5px 11px;border-radius:6px;cursor:pointer;border:1px solid var(--line-s);background:var(--surface);color:var(--ink-2);transition:.12s}
 .bp-btn:hover{border-color:var(--teal)}
 .bp-btn.on-pos{background:var(--accept-bg);border-color:var(--accept-line);color:var(--accept)}
@@ -125,12 +147,24 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
 .bp-note{padding:10px 13px;font-size:12px;color:var(--muted);background:var(--paper-2);border-top:1px solid var(--line);line-height:1.5}
 .bp-note b{color:var(--ink-2)}
 
+/* marker quick-ref table */
+.marker-ref{margin-top:10px;border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:11.5px}
+.marker-ref-head{background:var(--paper);padding:7px 11px;font-size:10px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted-2);border-bottom:1px solid var(--line)}
+.marker-ref-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border-bottom:1px solid var(--line)}
+.marker-ref-row:last-child{border-bottom:0}
+.marker-ref-row.hdr{background:var(--paper-2);font-size:10px;font-weight:700;color:var(--muted-2);text-transform:uppercase;letter-spacing:.05em}
+.mrc{padding:7px 10px;border-right:1px solid var(--line)}
+.mrc:last-child{border-right:0}
+.mrc .aliases{font-family:var(--mono);font-size:10px;color:var(--muted);display:block;margin-top:1px}
+
+/* date / field */
 .field{margin-top:11px}
 .field label{display:block;font-size:12px;font-weight:600;color:var(--ink-2);margin-bottom:4px}
 .field .u{font-size:11px;color:var(--muted-2);font-weight:500;font-family:var(--mono)}
 .inp{font-family:var(--mono);font-size:13.5px;color:var(--ink);border:1px solid var(--line-s);border-radius:7px;padding:8px 10px;width:100%;background:var(--surface)}
 .inp:focus{outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal)}
 
+/* readout */
 .readout{position:sticky;top:16px}
 @media(max-width:840px){.readout{position:static}}
 .verdict{border-radius:var(--r);border:1px solid var(--line-s);background:var(--surface);overflow:hidden;margin-bottom:13px}
@@ -140,7 +174,6 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
 .vstate{font-size:18px;font-weight:700;letter-spacing:-.01em;line-height:1.15}
 .vmeta{font-size:12px;color:var(--muted);margin-top:3px;font-weight:500}
 .vcode{font-family:var(--mono);font-size:11px;font-weight:600;margin-left:7px;padding:1px 6px;border-radius:4px;background:rgba(0,0,0,.06)}
-
 .verdict[data-v="accept"] .vhead{background:var(--accept-bg)}
 .verdict[data-v="accept"]{border-color:var(--accept-line)}
 .verdict[data-v="accept"] .vbadge{background:var(--accept);color:#fff}
@@ -234,8 +267,20 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
       <div class="card" id="card-cat">
         <div class="lbl"><span class="step">Step 1</span> Ticket category</div>
         <div class="opts" id="catOpts">
-          <button class="opt" data-cat="both" type="button"><span class="tick"></span>Hep B Documentation <b>OR</b> Declination<span class="sm">accepts either</span></button>
-          <button class="opt" data-cat="doconly" type="button"><span class="tick"></span>Hep B Documentation only<span class="sm">no declination</span></button>
+          <button class="opt" data-cat="both" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Hep B Documentation <b>OR</b> Declination</span>
+              <span class="opt-sub">Accepts vaccination proof, blood test, or a signed declination</span>
+            </span>
+          </button>
+          <button class="opt" data-cat="doconly" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Hep B Documentation only</span>
+              <span class="opt-sub">Vaccination proof or blood test only — declination not accepted here</span>
+            </span>
+          </button>
         </div>
       </div>
 
@@ -245,8 +290,8 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
         <div class="q">Does the name on the document match the professional?</div>
         <div class="hint">Nicknames / single last name / 2-letter typo / initials on first–middle — all fine per relaxation rules.</div>
         <div class="opts cols" id="nameOpts">
-          <button class="opt" data-name="yes" type="button"><span class="tick"></span>Yes — matches</button>
-          <button class="opt" data-name="no" type="button"><span class="tick"></span>No — mismatch</button>
+          <button class="opt" data-name="yes" type="button"><span class="tick"></span><span class="opt-body"><span class="opt-title">Yes — matches</span></span></button>
+          <button class="opt" data-name="no" type="button"><span class="tick"></span><span class="opt-body"><span class="opt-title">No — mismatch</span></span></button>
         </div>
       </div>
 
@@ -255,73 +300,156 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
         <div class="lbl"><span class="step">Step 3</span> What does the document establish?</div>
         <div class="hint">Pick what it actually proves — not just the file type.</div>
         <div class="opts" id="provesOpts">
-          <button class="opt" data-proves="vax" type="button"><span class="tick"></span>Proof of Hep B vaccination<span class="sm">record / receipt</span></button>
-          <button class="opt" data-proves="blood" type="button"><span class="tick"></span>Blood test / lab result<span class="sm">read panels</span></button>
-          <button class="opt" data-proves="decl" type="button"><span class="tick"></span>Hep B Declination</button>
-          <button class="opt" data-proves="none" type="button"><span class="tick"></span>None / doesn't show immunity</button>
+          <button class="opt" data-proves="vax" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Proof of Hep B vaccination</span>
+              <span class="opt-sub">A record showing the vaccine was administered or received — not a blood test</span>
+            </span>
+          </button>
+          <button class="opt" data-proves="blood" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Blood test / lab result</span>
+              <span class="opt-sub">Shows Hep B marker results (Surface Antigen, Surface Antibody, etc.)</span>
+            </span>
+          </button>
+          <button class="opt" data-proves="decl" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Hep B Declination</span>
+              <span class="opt-sub">Signed form declining the vaccine for religious or medical reasons</span>
+            </span>
+          </button>
+          <button class="opt" data-proves="none" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">None of the above</span>
+              <span class="opt-sub">Document doesn't show vaccination, immunity, or a valid declination</span>
+            </span>
+          </button>
         </div>
       </div>
 
       <!-- STEP 4a: vaccination subtype -->
       <div class="card hidden" id="card-vax">
         <div class="lbl"><span class="step">Step 4</span> Which kind of vaccination proof?</div>
+        <div class="hint">All three are acceptable. The type determines which date to use for validity.</div>
         <div class="opts" id="vaxOpts">
-          <button class="opt" data-vax="immrec" type="button"><span class="tick"></span>Immunization record<span class="sm">report date</span></button>
-          <button class="opt" data-vax="admin" type="button"><span class="tick"></span>Vaccine administration record<span class="sm">admin date</span></button>
-          <button class="opt" data-vax="receipt" type="button"><span class="tick"></span>Vaccination receipt<span class="sm">purchase date</span></button>
+          <button class="opt" data-vax="immrec" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Immunization record</span>
+              <span class="opt-sub">Official record confirming the vaccine series was completed — issued by a clinic, doctor, or health authority. Use the <b>report/results date</b>.</span>
+            </span>
+          </button>
+          <button class="opt" data-vax="admin" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Vaccine administration record</span>
+              <span class="opt-sub">Document from the administering provider showing when each dose was given. Use the <b>date of administration</b>.</span>
+            </span>
+          </button>
+          <button class="opt" data-vax="receipt" type="button">
+            <span class="tick"></span>
+            <span class="opt-body">
+              <span class="opt-title">Vaccination receipt / purchase record</span>
+              <span class="opt-sub">Pharmacy or clinic receipt confirming the vaccine was purchased/administered. Use the <b>purchase or receipt date</b>.</span>
+            </span>
+          </button>
+        </div>
+        <div class="guide show" id="vax-guide">
+          <div class="guide-head">Vaccination vs. Immunization — quick reference</div>
+          <div class="guide-row"><span class="guide-k">Vaccination record</span><span class="guide-v">Shows the vaccine was given. Does NOT require a blood test result. All three types above qualify.</span></div>
+          <div class="guide-row"><span class="guide-k">Immunization record</span><span class="guide-v">Same as vaccination record — these terms are interchangeable. Issued by a clinic or health authority after completing the series.</span></div>
+          <div class="guide-row"><span class="guide-k">Blood test / lab result</span><span class="guide-v">Different document entirely — goes through the blood panel steps instead. Select "Blood test" in Step 3 if that's what was submitted.</span></div>
         </div>
       </div>
 
       <!-- STEP 4b: blood -->
       <div class="card hidden" id="card-blood">
-        <div class="lbl"><span class="step">Step 4</span> Blood test — read each panel</div>
-        <div class="hint">Find each marker and tap its result. Verdict updates live.</div>
-        <div class="blood-panel">
+        <div class="lbl"><span class="step">Step 4</span> Blood test — read each panel in order</div>
+
+        <!-- marker quick-ref -->
+        <div class="marker-ref">
+          <div class="marker-ref-head">What each marker means — find these on the lab report</div>
+          <div class="marker-ref-row hdr">
+            <div class="mrc">Marker</div>
+            <div class="mrc">Tests for</div>
+            <div class="mrc">What to look for</div>
+          </div>
+          <div class="marker-ref-row">
+            <div class="mrc"><b>Surface Antigen</b><span class="aliases">HBsAg · Hep B Surf AG · HBV Ag</span></div>
+            <div class="mrc">Active infection</div>
+            <div class="mrc">Negative = no infection <b>(not the same as immune)</b></div>
+          </div>
+          <div class="marker-ref-row">
+            <div class="mrc"><b>Surface Antibody</b><span class="aliases">anti-HBs · Hep B Surf AB · HBsAb</span></div>
+            <div class="mrc">Immunity</div>
+            <div class="mrc"><b>Positive = immune → this is the one that gets accepted</b></div>
+          </div>
+          <div class="marker-ref-row">
+            <div class="mrc"><b>Core Antibody</b><span class="aliases">anti-HBc · Hep B Core Ab · HBcAb</span></div>
+            <div class="mrc">Past exposure</div>
+            <div class="mrc">Positive alone does NOT prove immunity</div>
+          </div>
+        </div>
+
+        <div class="blood-panel" style="margin-top:12px">
           <div class="bp-head">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6l1 6-3.5 2L9 9 8 3z" stroke="currentColor" stroke-width="1.4"/><path d="M12 11v10M8 21h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            Surface Antigen first — then Antibody
+            <div class="bp-head-title">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6l1 6-3.5 2L9 9 8 3z" stroke="currentColor" stroke-width="1.4"/><path d="M12 11v10M8 21h8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              Read panels in this order — Surface Antigen first
+            </div>
+            <div class="bp-head-sub">Tap the result you see on the lab report. An "A" or abnormal flag next to a result does not change it.</div>
           </div>
 
+          <!-- Surface Antigen -->
           <div class="bp-row">
             <div>
-              <div class="bp-label">Hep B Surface Antigen <span class="bp-tag">(HBsAg)</span></div>
-              <div class="bp-sub">Is there an active infection?</div>
+              <div class="bp-label">1. Hep B Surface Antigen</div>
+              <div class="bp-aliases">HBsAg &nbsp;·&nbsp; Hep B Surf AG &nbsp;·&nbsp; HBV Ag</div>
+              <div class="bp-meaning-line">Tests for <b>active infection</b>. Negative = not currently infected — but this alone does not prove immunity.</div>
               <div class="bp-opts">
                 <button class="bp-btn" data-panel="ag" data-val="neg" type="button">Negative / Non-reactive</button>
                 <button class="bp-btn" data-panel="ag" data-val="pos" type="button">Positive / Reactive</button>
-                <button class="bp-btn" data-panel="ag" data-val="nr" type="button">Not shown</button>
+                <button class="bp-btn" data-panel="ag" data-val="nr" type="button">Not on report</button>
               </div>
             </div>
             <div class="bp-meaning unknown" id="m-ag">—</div>
           </div>
 
+          <!-- Surface Antibody -->
           <div class="bp-row" id="row-ab" style="display:none">
             <div>
-              <div class="bp-label">Hep B Surface Antibody <span class="bp-tag">(anti-HBs)</span></div>
-              <div class="bp-sub">Does this prove immunity? The marker that confirms protection.</div>
+              <div class="bp-label">2. Hep B Surface Antibody</div>
+              <div class="bp-aliases">anti-HBs &nbsp;·&nbsp; Hep B Surf AB &nbsp;·&nbsp; HBsAb</div>
+              <div class="bp-meaning-line"><b>The immunity marker.</b> Positive Surface Antibody is the only blood result CBH accepts as proof of immunity on its own.</div>
               <div class="bp-opts">
                 <button class="bp-btn" data-panel="ab" data-val="pos" type="button">Positive / Reactive</button>
                 <button class="bp-btn" data-panel="ab" data-val="neg" type="button">Negative / Non-reactive</button>
-                <button class="bp-btn" data-panel="ab" data-val="nr" type="button">Not shown</button>
+                <button class="bp-btn" data-panel="ab" data-val="nr" type="button">Not on report</button>
               </div>
             </div>
             <div class="bp-meaning unknown" id="m-ab">—</div>
           </div>
 
+          <!-- Core Antibody -->
           <div class="bp-row" id="row-core" style="display:none">
             <div>
-              <div class="bp-label">Hep B Core Antibody <span class="bp-tag">(anti-HBc)</span></div>
-              <div class="bp-sub">Tiebreaker — both surface markers were non-positive. Past-exposure marker; does not prove immunity.</div>
+              <div class="bp-label">3. Hep B Core Antibody <span style="font-size:11px;font-weight:500;color:var(--muted)">(tiebreaker only)</span></div>
+              <div class="bp-aliases">anti-HBc &nbsp;·&nbsp; Hep B Core Ab &nbsp;·&nbsp; HBcAb</div>
+              <div class="bp-meaning-line">Past-exposure marker. Positive here means <b>more testing needed</b> — it does not confirm immunity on its own.</div>
               <div class="bp-opts">
                 <button class="bp-btn" data-panel="core" data-val="pos" type="button">Positive / Reactive</button>
                 <button class="bp-btn" data-panel="core" data-val="neg" type="button">Negative / Non-reactive</button>
-                <button class="bp-btn" data-panel="core" data-val="nr" type="button">Not shown</button>
+                <button class="bp-btn" data-panel="core" data-val="nr" type="button">Not on report</button>
               </div>
             </div>
             <div class="bp-meaning unknown" id="m-core">—</div>
           </div>
 
-          <div class="bp-note" id="blood-note">Start with Surface Antigen. An "A" / abnormal flag next to a result doesn't change it — Reactive Surface Antibody still means immune.</div>
+          <div class="bp-note" id="blood-note">Start with <b>Surface Antigen</b> — find it on the lab report using the aliases above.</div>
         </div>
       </div>
 
@@ -331,8 +459,8 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
         <div class="q">Does the declination state a religious or medical reason?</div>
         <div class="hint">Physician or professional signature is NOT required.</div>
         <div class="opts cols" id="declOpts">
-          <button class="opt" data-decl="yes" type="button"><span class="tick"></span>Yes — reason stated</button>
-          <button class="opt" data-decl="no" type="button"><span class="tick"></span>No reason given</button>
+          <button class="opt" data-decl="yes" type="button"><span class="tick"></span><span class="opt-body"><span class="opt-title">Yes — reason stated</span></span></button>
+          <button class="opt" data-decl="no" type="button"><span class="tick"></span><span class="opt-body"><span class="opt-title">No reason given</span></span></button>
         </div>
       </div>
 
@@ -346,12 +474,12 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
       <div class="card hidden" id="card-role">
         <div class="lbl"><span class="step">Step 6</span> Who is closing this ticket?</div>
         <div class="opts cols" id="roleOpts">
-          <button class="opt" data-role="spec" type="button"><span class="tick"></span>Specialist<span class="sm">Submissions</span></button>
-          <button class="opt" data-role="sme" type="button"><span class="tick"></span>SME<span class="sm">Escalation</span></button>
+          <button class="opt" data-role="spec" type="button"><span class="tick"></span><span class="opt-body"><span class="opt-title">Specialist</span><span class="opt-sub">Document Submission</span></span></button>
+          <button class="opt" data-role="sme" type="button"><span class="tick"></span><span class="opt-body"><span class="opt-title">SME</span><span class="opt-sub">Document Escalation</span></span></button>
         </div>
       </div>
 
-    </div>
+    </div><!-- /inputs -->
 
     <div class="readout">
       <div class="verdict" id="verdict" data-v="pending">
@@ -381,128 +509,112 @@ h1{font-size:19px;font-weight:700;margin:0;letter-spacing:-.01em}
   </div>
 
   <div class="foot">
-    Decision-support tool · mirrors the Hep B Documentation SOP as written · does not replace SME judgment on document integrity or edge cases.<br>
-    Blood test (§3.3): Surface Antibody confirms immunity. Surface Antigen positive, or Core-only positive, routes to "more testing." Otherwise reject.
+    Decision-support tool · mirrors the Hep B Documentation SOP · does not replace SME judgment on document integrity or edge cases.<br>
+    Key rule: <b>Positive Surface Antibody (anti-HBs)</b> is the only blood result that confirms immunity on its own.
   </div>
 </div>
 
 <script>
 "use strict";
+var CONFIG=JSON.parse(document.getElementById('hepb-config').textContent);
+var S={cat:null,name:null,proves:null,vax:null,blood:{ag:null,ab:null,core:null},decl:null,date:'',role:null};
 
-var CONFIG = JSON.parse(document.getElementById('hepb-config').textContent);
-
-var S = { cat:null, name:null, proves:null, vax:null, blood:{ag:null,ab:null,core:null}, decl:null, date:'', role:null };
-
-var MEAN = {
-  ag:{ neg:{c:'warn',t:'Not infected'}, pos:{c:'bad',t:'INFECTED'}, nr:{c:'unknown',t:'—'} },
-  ab:{ pos:{c:'good',t:'IMMUNE'}, neg:{c:'bad',t:'Not immune'}, nr:{c:'unknown',t:'—'} },
-  core:{ pos:{c:'warn',t:'Past exposure'}, neg:{c:'good',t:'No exposure'}, nr:{c:'unknown',t:'—'} }
+var MEAN={
+  ag:{neg:{c:'warn',t:'Not infected'},pos:{c:'bad',t:'INFECTED'},nr:{c:'unknown',t:'Not shown'}},
+  ab:{pos:{c:'good',t:'IMMUNE'},neg:{c:'bad',t:'Not immune'},nr:{c:'unknown',t:'Not shown'}},
+  core:{pos:{c:'warn',t:'Past exposure'},neg:{c:'good',t:'No exposure'},nr:{c:'unknown',t:'Not shown'}}
 };
 
 function $(id){return document.getElementById(id)}
 function show(el,on){if(el)el.classList.toggle('hidden',!on)}
 function fmtDate(str,years){
   if(!str)return null;
-  var d=new Date(str+'T00:00:00'); if(isNaN(d.getTime()))return null;
+  var d=new Date(str+'T00:00:00');if(isNaN(d.getTime()))return null;
   d.setFullYear(d.getFullYear()+years);
   var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return m[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 }
-
-/* map a config outcome string to a verdict state */
 function outcome(val){
-  if(val==='accept') return {state:'accept'};
-  if(val==='reject') return {state:'reject', code:'R5'};
-  return {state:'moretest', code:'M1'};
+  if(val==='accept')return{state:'accept'};
+  if(val==='reject')return{state:'reject',code:'R5'};
+  return{state:'moretest',code:'M1'};
 }
-
-/* blood gates — SHAPE fixed; OUTCOMES from config.
-   Surface Antibody positive = accept. Surface Antigen positive = more testing.
-   Core Antibody is the tiebreaker only when both surface markers are non-positive. */
 function bloodVerdict(){
-  var ag=S.blood.ag, ab=S.blood.ab, core=S.blood.core;
-  if(!ag) return {state:'pending'};
-  if(ag==='pos') return outcome(CONFIG.outcomes.antigenPositive);
-  if(!ab) return {state:'pending'};
-  if(ab==='pos') return {state:'accept'};
-  if(!core) return {state:'pending'};
-  if(core==='pos') return outcome(CONFIG.outcomes.coreExposure);
+  var ag=S.blood.ag,ab=S.blood.ab,core=S.blood.core;
+  if(!ag)return{state:'pending'};
+  if(ag==='pos')return outcome(CONFIG.outcomes.antigenPositive);
+  if(!ab)return{state:'pending'};
+  if(ab==='pos')return{state:'accept'};
+  if(!core)return{state:'pending'};
+  if(core==='pos')return outcome(CONFIG.outcomes.coreExposure);
   return outcome(CONFIG.outcomes.noImmunity);
 }
 
 function evaluate(){
-  var R={verdict:'pending', code:null, reasons:[], output:null};
-  if(!S.cat) return R;
-
-  if(S.name==='no'){ R.reasons.push({k:'fail',t:'Name does not match the professional.',ref:'Scenario 1'}); return term(R,'reject','R1'); }
-  if(S.name==='yes') R.reasons.push({k:'pass',t:'Name matches (within relaxation rules).',ref:'§3.1'});
-  if(!S.name) return R;
-  if(!S.proves) return R;
-
-  if(S.proves==='none'){ R.reasons.push({k:'fail',t:'Document does not show vaccination or immunity.',ref:'Scenario 2'}); return term(R,'reject','R3'); }
-
+  var R={verdict:'pending',code:null,reasons:[],output:null};
+  if(!S.cat)return R;
+  if(S.name==='no'){R.reasons.push({k:'fail',t:'Name does not match the professional.',ref:'Scenario 1'});return term(R,'reject','R1');}
+  if(S.name==='yes')R.reasons.push({k:'pass',t:'Name matches (within relaxation rules).',ref:'§3.1'});
+  if(!S.name)return R;
+  if(!S.proves)return R;
+  if(S.proves==='none'){R.reasons.push({k:'fail',t:'Document does not show vaccination or immunity.',ref:'Scenario 2'});return term(R,'reject','R3');}
   if(S.proves==='decl'){
-    if(S.cat==='doconly'){ R.reasons.push({k:'fail',t:'Declination submitted under "Hep B Documentation" — category does not accept declinations.',ref:'Scenario 3'}); return term(R,'reject','R6'); }
-    if(!S.decl) return R;
-    if(S.decl==='no'){ R.reasons.push({k:'fail',t:'Declination has no stated religious or medical reason.',ref:'§3.1'}); return term(R,'reject','R2'); }
+    if(S.cat==='doconly'){R.reasons.push({k:'fail',t:'Declination submitted under "Hep B Documentation only" — this category does not accept declinations.',ref:'Scenario 3'});return term(R,'reject','R6');}
+    if(!S.decl)return R;
+    if(S.decl==='no'){R.reasons.push({k:'fail',t:'Declination has no stated religious or medical reason.',ref:'§3.1'});return term(R,'reject','R2');}
     R.reasons.push({k:'pass',t:'Valid declination — reason stated, no signature required.',ref:'§3.1'});
     return acceptPath(R,'decl','Hep B Documentation OR Hep B Declination');
   }
-
   if(S.proves==='vax'){
-    if(!S.vax) return R;
+    if(!S.vax)return R;
     var lbl=S.vax==='immrec'?'Immunization record':S.vax==='admin'?'Vaccine administration record':'Vaccination receipt';
     R.reasons.push({k:'pass',t:lbl+' accepted as proof of Hep B vaccination.',ref:'§3.1 / §3.2'});
     return acceptPath(R,S.vax,S.cat==='both'?'Hep B Documentation OR Hep B Declination':'Hep B Documentation');
   }
-
   if(S.proves==='blood'){
     R.reasons.push({k:'info',t:'Blood test — reading panels per §3.3 table.',ref:'§3.3'});
     var bv=bloodVerdict();
     if(bv.state==='pending'){
-      if(!S.blood.ag) R.reasons.push({k:'info',t:'Answer Surface Antigen first.',ref:'§3.3'});
-      else if(!S.blood.ab) R.reasons.push({k:'info',t:'Now answer Surface Antibody.',ref:'§3.3'});
-      else R.reasons.push({k:'info',t:'Both surface markers non-positive — check Core Antibody.',ref:'§3.3'});
+      if(!S.blood.ag)R.reasons.push({k:'info',t:'Find Surface Antigen (HBsAg / Hep B Surf AG) on the report and tap its result.',ref:'§3.3'});
+      else if(!S.blood.ab)R.reasons.push({k:'info',t:'Surface Antigen is non-positive. Now find Surface Antibody (anti-HBs / Hep B Surf AB).',ref:'§3.3'});
+      else R.reasons.push({k:'info',t:'Both surface markers are non-positive. Check Core Antibody (anti-HBc) to settle the outcome.',ref:'§3.3'});
       return R;
     }
-    if(bv.state==='accept'){ R.reasons.push({k:'pass',t:'Surface Antibody (anti-HBs) Positive — immunity confirmed.',ref:'§3.3 table'}); return acceptPath(R,'blood',S.cat==='both'?'Hep B Documentation OR Hep B Declination':'Hep B Documentation'); }
+    if(bv.state==='accept'){R.reasons.push({k:'pass',t:'Surface Antibody (anti-HBs) Positive — immunity confirmed. This is the accepted immunity marker.',ref:'§3.3 table'});return acceptPath(R,'blood',S.cat==='both'?'Hep B Documentation OR Hep B Declination':'Hep B Documentation');}
     if(bv.state==='moretest'){
-      if(S.blood.ag==='pos') R.reasons.push({k:'warn',t:'Surface Antigen Positive — active HBV. Per the SOP table this is "More Testing Needed", not a rejection.',ref:'§3.3 table'});
-      else R.reasons.push({k:'warn',t:'Core Antibody positive with no immunity shown — the table\'s "Could be Infected" case. More Testing Needed.',ref:'§3.3 table'});
+      if(S.blood.ag==='pos')R.reasons.push({k:'warn',t:'Surface Antigen Positive — indicates active HBV infection. Per the §3.3 table: More Testing Needed, not a rejection.',ref:'§3.3 table'});
+      else R.reasons.push({k:'warn',t:'Core Antibody positive with no Surface Antibody — the "Could be Infected" case in the §3.3 table. More Testing Needed.',ref:'§3.3 table'});
       return term(R,'moretest',bv.code);
     }
-    var abDesc=S.blood.ab==='neg'?'Surface Antibody Negative':S.blood.ab==='nr'?'Surface Antibody not shown on document':'Surface Antibody non-positive';
-    var coreDesc=S.blood.core==='neg'?'Core Antibody Negative':S.blood.core==='nr'?'Core Antibody not shown on document':'Core Antibody non-positive';
+    var abDesc=S.blood.ab==='neg'?'Surface Antibody Negative':S.blood.ab==='nr'?'Surface Antibody not shown on report':'Surface Antibody non-positive';
+    var coreDesc=S.blood.core==='neg'?'Core Antibody Negative':S.blood.core==='nr'?'Core Antibody not shown on report':'Core Antibody non-positive';
     R.reasons.push({k:'fail',t:'No immunity proven. Surface Antigen Negative (no active infection), '+abDesc+' (immunity not confirmed), '+coreDesc+'. A negative Surface Antigen alone does not confirm immunity.',ref:'§3.3'});
     return term(R,'reject',bv.code);
   }
   return R;
 }
 
-function term(R,verdict,code){ R.verdict=verdict; R.code=code; return finish(R); }
-
+function term(R,verdict,code){R.verdict=verdict;R.code=code;return finish(R);}
 function acceptPath(R,validityKey,tag){
   var vr=CONFIG.validity[validityKey];
-  R.output={tag:tag, dateLabel:vr.label, years:vr.years, exp:null, vkey:validityKey};
-  if(!S.date){ R.verdict='accept'; return finish(R); }
-  var exp=fmtDate(S.date,vr.years); R.output.exp=exp; R.verdict='accept';
-  if(exp) R.reasons.push({k:'pass',t:'Validity '+vr.years+(vr.years===1?' year':' years')+' from '+vr.label+' → expires '+exp+'.',ref:'§4.1'});
+  R.output={tag:tag,dateLabel:vr.label,years:vr.years,exp:null,vkey:validityKey};
+  if(!S.date){R.verdict='accept';return finish(R);}
+  var exp=fmtDate(S.date,vr.years);R.output.exp=exp;R.verdict='accept';
+  if(exp)R.reasons.push({k:'pass',t:'Validity '+vr.years+(vr.years===1?' year':' years')+' from '+vr.label+' → expires '+exp+'.',ref:'§4.1'});
   return finish(R);
 }
-
 function finish(R){
-  if(R.verdict==='accept' && R.output){
+  if(R.verdict==='accept'&&R.output){
     var a=[];
     a.push(['Tag under: <span class="pill">'+R.output.tag+'</span>']);
     a.push(['Validity: <b>'+R.output.years+(R.output.years===1?' year':' years')+' from '+R.output.dateLabel+'</b>'+(R.output.exp?' → <b>'+R.output.exp+'</b>':'')]);
-    a.push(['Ticket type → <b>Document Submission</b>']);
     a.push(['Check for SSN / PII before approving.']);
-    a.push([S.role==='sme'?'SME ticket type → <b>Document Escalation › Document Validation</b>':S.role==='spec'?'Specialist ticket type → <b>Documents › Document Submission</b>':'Select role in Step 6 for the exact ticket type.']);
+    a.push([S.role==='sme'?'Ticket type → <b>Document Escalation › Document Validation</b>':S.role==='spec'?'Ticket type → <b>Documents › Document Submission</b>':'Select role in Step 6 for ticket type.']);
     a.push(['Submit as <b>Solved</b>.']);
     R.actions=a;
-  } else if(R.verdict==='reject'){
+  }else if(R.verdict==='reject'){
     R.actions=[['Send rejection via the Document Rejection guidelines / macro.'],['Copy the pre-filled note below.'],['Submit as <b>Solved</b>.']];
-  } else if(R.verdict==='moretest'){
+  }else if(R.verdict==='moretest'){
     R.actions=[['This is NOT a rejection — the document is valid but needs further evaluation.'],['Send the more-testing note below to the professional.'],['Do not approve. Follow team guidance on solve vs. hold.']];
   }
   return R;
@@ -510,7 +622,7 @@ function finish(R){
 
 function render(){
   var R=evaluate();
-  var v=$('verdict'), vs=$('vstate'), vm=$('vmeta'), vb=$('vbadge');
+  var v=$('verdict'),vs=$('vstate'),vm=$('vmeta'),vb=$('vbadge');
   var IC={
     pending:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/><path d="M12 8v4.5M12 16h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
     accept:'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" fill="currentColor" opacity=".15"/><path d="M7.5 12.3l3 3 6-6.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -518,31 +630,30 @@ function render(){
     moretest:'<svg viewBox="0 0 24 24" fill="none"><path d="M12 3l9 16H3L12 3z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 9v4M12 16h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
   };
   v.setAttribute('data-v',R.verdict);
-  if(R.verdict==='accept'){ vb.innerHTML=IC.accept; vs.innerHTML='ACCEPT'; vm.textContent=R.output?R.output.tag:'Approved'; }
-  else if(R.verdict==='reject'){ vb.innerHTML=IC.reject; vs.innerHTML='REJECT'+(R.code?'<span class="vcode">'+R.code+'</span>':''); vm.textContent=R.code&&CONFIG.notes[R.code]?'Reason: '+CONFIG.notes[R.code].reason:'Does not meet criteria'; }
-  else if(R.verdict==='moretest'){ vb.innerHTML=IC.moretest; vs.innerHTML='MORE TESTING'+(R.code?'<span class="vcode">'+R.code+'</span>':''); vm.textContent='Needs further evaluation — not a rejection'; }
-  else { vb.innerHTML=IC.pending; vs.textContent=!S.cat?'Awaiting input':'In progress'; vm.textContent=!S.cat?'Pick the ticket category to begin':'Answer the next step to reach a verdict'; }
+  if(R.verdict==='accept'){vb.innerHTML=IC.accept;vs.innerHTML='ACCEPT';vm.textContent=R.output?R.output.tag:'Approved';}
+  else if(R.verdict==='reject'){vb.innerHTML=IC.reject;vs.innerHTML='REJECT'+(R.code?'<span class="vcode">'+R.code+'</span>':'');vm.textContent=R.code&&CONFIG.notes[R.code.replace('R5','R5_both')]?'Reason: '+(CONFIG.notes[R.code]||CONFIG.notes[R.code+'_both']||{reason:''}).reason:'Does not meet criteria';}
+  else if(R.verdict==='moretest'){vb.innerHTML=IC.moretest;vs.innerHTML='MORE TESTING'+(R.code?'<span class="vcode">'+R.code+'</span>':'');vm.textContent='Needs further evaluation — not a rejection';}
+  else{vb.innerHTML=IC.pending;vs.textContent=!S.cat?'Awaiting input':'In progress';vm.textContent=!S.cat?'Pick the ticket category to begin':'Answer the next step to reach a verdict';}
 
   var vbody=$('vbody');
-  if(R.output && R.verdict==='accept'){
+  if(R.output&&R.verdict==='accept'){
     show(vbody,true);
-    var rows='';
-    rows+='<div class="kv"><span class="k">App tag</span><span class="v">'+R.output.tag+'</span></div>';
+    var rows='<div class="kv"><span class="k">App tag</span><span class="v">'+R.output.tag+'</span></div>';
     rows+='<div class="kv"><span class="k">Validity</span><span class="v">'+R.output.years+(R.output.years===1?' yr':' yrs')+' from '+R.output.dateLabel+'</span></div>';
     rows+=R.output.exp?'<div class="kv"><span class="k">Expires</span><span class="v exp">'+R.output.exp+'<button class="copy" data-copy="'+R.output.exp+'">copy</button></span></div>':'<div class="kv"><span class="k">Expires</span><span class="v" style="color:var(--muted)">enter date · Step 5</span></div>';
     vbody.innerHTML=rows;
-  } else show(vbody,false);
+  }else show(vbody,false);
 
   var trail=$('trail');
-  if(!R.reasons.length){ trail.innerHTML='<div class="empty">Decision steps appear here as you go.</div>'; }
-  else { trail.innerHTML=R.reasons.map(function(r){
+  if(!R.reasons.length){trail.innerHTML='<div class="empty">Decision steps appear here as you go.</div>';}
+  else{trail.innerHTML=R.reasons.map(function(r){
     var ic=r.k==='pass'?'<svg viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4 4 10-11" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>':r.k==='fail'?'<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>':'<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.6"/><path d="M12 11v5M12 8h.01" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
     return '<div class="reason '+r.k+'"><span class="ic">'+ic+'</span><span class="txt">'+r.t+'<span class="ref">'+r.ref+'</span></span></div>';
-  }).join(''); }
+  }).join('');}
 
   var no=$('noteOut');
   var noteKey=R.code==='R5'?(S.cat==='doconly'?'R5_doconly':'R5_both'):R.code;
-  if((R.verdict==='reject'||R.verdict==='moretest') && noteKey && CONFIG.notes[noteKey]){
+  if((R.verdict==='reject'||R.verdict==='moretest')&&noteKey&&CONFIG.notes[noteKey]){
     show(no,true);
     var nd=CONFIG.notes[noteKey];
     var isRej=R.verdict==='reject';
@@ -551,23 +662,23 @@ function render(){
       +(isRej?'<p><span class="note-reason">Reason: '+nd.reason+'</span></p>':'')
       +'<p>'+nd.text+'</p>'
       +'<button class="copy-note" data-copy="'+nd.text.replace(/"/g,'&quot;')+'">Copy '+(isRej?'rejection note':'message')+'</button>';
-  } else show(no,false);
+  }else show(no,false);
 
-  var act=$('actions'), al=$('actList'), at=$('actTitle');
-  if(R.actions && R.verdict!=='pending'){
+  var act=$('actions'),al=$('actList'),at=$('actTitle');
+  if(R.actions&&R.verdict!=='pending'){
     show(act,true);
     at.textContent=R.verdict==='reject'?'Rejection steps':R.verdict==='moretest'?'More testing — steps':'Close-out steps';
     al.innerHTML=R.actions.map(function(a,i){return '<div class="act"><span class="num">'+(i+1).toString().padStart(2,'0')+'</span><span>'+a[0]+'</span></div>';}).join('');
-  } else show(act,false);
+  }else show(act,false);
 
   ['ag','ab','core'].forEach(function(p){
-    var val=S.blood[p], m=$('m-'+p); if(!m)return;
-    if(!val){ m.className='bp-meaning unknown'; m.textContent='—'; return; }
-    var info=MEAN[p][val]; m.className='bp-meaning '+info.c; m.textContent=info.t;
+    var val=S.blood[p],m=$('m-'+p);if(!m)return;
+    if(!val){m.className='bp-meaning unknown';m.textContent='—';return;}
+    var info=MEAN[p][val];m.className='bp-meaning '+info.c;m.textContent=info.t;
   });
-  var rowAb=$('row-ab'), rowCore=$('row-core');
+  var rowAb=$('row-ab'),rowCore=$('row-core');
   if(rowAb&&rowCore){
-    var agA=!!S.blood.ag, agP=S.blood.ag==='pos', abA=!!S.blood.ab, abP=S.blood.ab==='pos';
+    var agA=!!S.blood.ag,agP=S.blood.ag==='pos',abA=!!S.blood.ab,abP=S.blood.ab==='pos';
     rowAb.style.display=(agA&&!agP)?'':'none';
     rowCore.style.display=(agA&&!agP&&abA&&!abP)?'':'none';
   }
@@ -575,12 +686,11 @@ function render(){
   if(bn){
     var bv=bloodVerdict();
     if(bv.state==='pending'){
-      if(!S.blood.ag) bn.innerHTML='Start with <b>Surface Antigen</b>. An "A"/abnormal flag next to a result doesn\'t change it.';
-      else if(!S.blood.ab) bn.innerHTML='Now tap <b>Surface Antibody</b> — the marker that proves immunity.';
-      else bn.innerHTML='Both surface markers non-positive. Check <b>Core Antibody</b> to settle the outcome.';
-    } else { bn.innerHTML='Outcome resolved — see the verdict on the right.'; }
+      if(!S.blood.ag)bn.innerHTML='Start with <b>Surface Antigen</b> (HBsAg / Hep B Surf AG). Find it on the lab report using the aliases above.';
+      else if(!S.blood.ab)bn.innerHTML='Now find <b>Surface Antibody</b> (anti-HBs / Hep B Surf AB) — the immunity marker.';
+      else bn.innerHTML='Both surface markers are non-positive. Find <b>Core Antibody</b> (anti-HBc / Hep B Core Ab) to settle the outcome.';
+    }else{bn.innerHTML='Outcome resolved — see the verdict panel.';}
   }
-
   updateVisibility(R);
 }
 
@@ -592,30 +702,29 @@ function updateVisibility(R){
   show($('card-decl'),S.proves==='decl'&&S.name==='yes'&&S.cat==='both');
   var onAccept=R.verdict==='accept';
   show($('card-date'),onAccept);
-  if(onAccept&&R.output) buildDate(R.output.vkey,R.output.dateLabel,R.output.years);
+  if(onAccept&&R.output)buildDate(R.output.vkey,R.output.dateLabel,R.output.years);
   show($('card-role'),onAccept);
-
   var step4done=S.proves==='vax'?!!S.vax:S.proves==='blood'?(bloodVerdict().state!=='pending'):S.proves==='decl'?!!S.decl:!!S.proves;
   var done={1:!!S.cat,2:!!S.name,3:!!S.proves,4:step4done,5:!!S.date,6:!!S.role};
   var cur=!S.cat?1:!S.name?2:!S.proves?3:!step4done?4:(R.verdict==='accept'&&!S.date)?5:(R.verdict==='accept'&&!S.role)?6:0;
   document.querySelectorAll('.rail .seg').forEach(function(seg){
-    var n=parseInt(seg.getAttribute('data-step'),10); seg.classList.remove('on','done');
-    if(n===cur) seg.classList.add('on'); else if(done[n]) seg.classList.add('done');
+    var n=parseInt(seg.getAttribute('data-step'),10);seg.classList.remove('on','done');
+    if(n===cur)seg.classList.add('on');else if(done[n])seg.classList.add('done');
   });
 }
 
 var lastDateKey=null;
 function buildDate(vkey,label,years){
-  if(lastDateKey===vkey) return;
+  if(lastDateKey===vkey)return;
   lastDateKey=vkey;
   var wrap=$('dateWrap');
   wrap.innerHTML='<div class="field" style="margin-top:0"><label for="docDate">'+label+' <span class="u">'+years+(years===1?' year':' years')+' validity</span></label><input class="inp" id="docDate" type="date"></div>';
-  if(S.date) $('docDate').value=S.date;
-  $('docDate').addEventListener('input',function(e){ S.date=e.target.value; render(); });
+  if(S.date)$('docDate').value=S.date;
+  $('docDate').addEventListener('input',function(e){S.date=e.target.value;render();});
 }
 
 function bindOpts(id,attr,key,onset){
-  var host=$(id); if(!host)return;
+  var host=$(id);if(!host)return;
   host.querySelectorAll('.opt').forEach(function(b){
     b.addEventListener('click',function(){
       S[key]=b.getAttribute(attr);
@@ -630,11 +739,11 @@ function clearSel(id){var el=$(id);if(el)el.querySelectorAll('.opt').forEach(fun
 function clearBlood(){document.querySelectorAll('.bp-btn').forEach(function(b){b.classList.remove('on-pos','on-neg','on-nr');});}
 
 function resetFrom(level){
-  if(level<=0){ S.name=null; clearSel('nameOpts'); }
-  if(level<=1){ S.proves=null; clearSel('provesOpts'); }
-  if(level<=2){ S.vax=null; S.blood={ag:null,ab:null,core:null}; S.decl=null; clearSel('vaxOpts'); clearSel('declOpts'); clearBlood(); }
-  if(level<=3){ S.date=''; lastDateKey=null; var dw=$('dateWrap'); if(dw) dw.innerHTML=''; }
-  if(level<=4){ S.role=null; clearSel('roleOpts'); }
+  if(level<=0){S.name=null;clearSel('nameOpts');}
+  if(level<=1){S.proves=null;clearSel('provesOpts');}
+  if(level<=2){S.vax=null;S.blood={ag:null,ab:null,core:null};S.decl=null;clearSel('vaxOpts');clearSel('declOpts');clearBlood();}
+  if(level<=3){S.date='';lastDateKey=null;var dw=$('dateWrap');if(dw)dw.innerHTML='';}
+  if(level<=4){S.role=null;clearSel('roleOpts');}
 }
 
 bindOpts('catOpts','data-cat','cat',function(){resetFrom(0);});
@@ -646,25 +755,25 @@ bindOpts('roleOpts','data-role','role',null);
 
 document.querySelectorAll('.bp-btn').forEach(function(b){
   b.addEventListener('click',function(){
-    var p=b.getAttribute('data-panel'), val=b.getAttribute('data-val');
+    var p=b.getAttribute('data-panel'),val=b.getAttribute('data-val');
     S.blood[p]=val;
     document.querySelectorAll('.bp-btn[data-panel="'+p+'"]').forEach(function(x){x.classList.remove('on-pos','on-neg','on-nr');});
     b.classList.add(val==='pos'?'on-pos':val==='neg'?'on-neg':'on-nr');
-    if(S.date){ S.date=''; lastDateKey=null; var dw=$('dateWrap'); if(dw) dw.innerHTML=''; }
+    if(S.date){S.date='';lastDateKey=null;var dw=$('dateWrap');if(dw)dw.innerHTML='';}
     render();
   });
 });
 
 document.addEventListener('click',function(e){
-  var c=e.target.closest('[data-copy]'); if(!c)return;
+  var c=e.target.closest('[data-copy]');if(!c)return;
   var txt=c.getAttribute('data-copy');
-  if(navigator.clipboard){ navigator.clipboard.writeText(txt).then(function(){ var o=c.textContent; c.textContent='copied'; setTimeout(function(){c.textContent=o;},1100); }); }
+  if(navigator.clipboard){navigator.clipboard.writeText(txt).then(function(){var o=c.textContent;c.textContent='copied';setTimeout(function(){c.textContent=o;},1100);});}
 });
 
 $('resetBtn').addEventListener('click',function(){
   S={cat:null,name:null,proves:null,vax:null,blood:{ag:null,ab:null,core:null},decl:null,date:'',role:null};
   ['catOpts','nameOpts','provesOpts','vaxOpts','declOpts','roleOpts'].forEach(clearSel);
-  clearBlood(); lastDateKey=null; var dw=$('dateWrap'); if(dw) dw.innerHTML='';
+  clearBlood();lastDateKey=null;var dw=$('dateWrap');if(dw)dw.innerHTML='';
   render();
 });
 
