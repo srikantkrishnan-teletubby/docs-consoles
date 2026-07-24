@@ -49,6 +49,22 @@ html,body{height:100%;font-family:var(--sans);color:var(--ink);background:var(--
 .msg-bubble.pending{color:var(--muted);font-style:italic}
 .msg-bubble.error{background:#fdecea;border-color:#f0bebe;color:#991b1b}
 
+.ans-block{margin-bottom:9px}
+.ans-block:last-child{margin-bottom:0}
+.ans-label{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:4px;display:block}
+.ans-verdict{border-radius:8px;padding:9px 12px;font-size:14px;font-weight:700;margin-bottom:10px}
+.ans-verdict.accept{background:var(--accept-bg,#eaf6ee);color:var(--accept-d,#166534);border:1px solid #b6dfc2}
+.ans-verdict.reject{background:#fdecea;color:#991b1b;border:1px solid #f0bebe}
+.ans-verdict.info{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line)}
+.ans-verdict.escalate{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line)}
+.ans-why .ans-label{color:var(--muted-2)}
+.ans-why ul{margin:0;padding-left:18px}
+.ans-why li{margin:2px 0}
+.ans-next .ans-label{color:var(--teal-d)}
+.ans-next ul{margin:0;padding-left:18px}
+.ans-next li{margin:2px 0}
+.ans-source{font-family:var(--mono);font-size:11px;color:var(--muted-2);padding-top:8px;margin-top:2px;border-top:1px solid var(--line)}
+
 .empty-state{text-align:center;color:var(--muted);padding:60px 20px;font-size:13px;line-height:1.6}
 .empty-state b{color:var(--ink-2)}
 .examples{margin-top:16px;display:flex;flex-direction:column;gap:6px;align-items:center}
@@ -121,6 +137,66 @@ function checkHealth(){
 }
 checkHealth();
 
+function esc(s){
+  var d=document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function bulletList(text){
+  var lines = text.split('\n').map(function(l){return l.trim();}).filter(Boolean);
+  var items = lines.map(function(l){ return l.replace(/^[-•*]\s*/, ''); });
+  return '<ul>' + items.map(function(i){ return '<li>'+esc(i)+'</li>'; }).join('') + '</ul>';
+}
+
+function verdictClass(v){
+  var vl = v.toLowerCase();
+  if(vl.indexOf('accept')>-1) return 'accept';
+  if(vl.indexOf('reject')>-1) return 'reject';
+  if(vl.indexOf('escalate')>-1 || vl.indexOf('not covered')>-1) return 'escalate';
+  return 'info';
+}
+
+// Parses the VERDICT / WHY / NEXT STEP / SOURCE template. If none of those
+// labels are present (e.g. the model asked a clarifying question instead of
+// giving a verdict), falls back to plain rendered text.
+function formatStructuredAnswer(text){
+  var hasTemplate = /VERDICT\s*:/i.test(text);
+  if(!hasTemplate){
+    return '<div>' + esc(text).replace(/\n/g,'<br>') + '</div>';
+  }
+
+  var sections = {};
+  var order = ['VERDICT','WHY','NEXT STEP','SOURCE'];
+  var pattern = /(VERDICT|WHY|NEXT STEP|SOURCE)\s*:\s*/gi;
+  var matches = [];
+  var m;
+  while((m = pattern.exec(text)) !== null){
+    matches.push({label: m[1].toUpperCase(), start: m.index, contentStart: m.index + m[0].length});
+  }
+  for(var i=0;i<matches.length;i++){
+    var end = (i+1 < matches.length) ? matches[i+1].start : text.length;
+    sections[matches[i].label] = text.slice(matches[i].contentStart, end).trim();
+  }
+
+  var html = '';
+
+  if(sections['VERDICT']){
+    var vClass = verdictClass(sections['VERDICT']);
+    html += '<div class="ans-verdict '+vClass+'">'+esc(sections['VERDICT'])+'</div>';
+  }
+  if(sections['WHY']){
+    html += '<div class="ans-block ans-why"><span class="ans-label">Why</span>'+bulletList(sections['WHY'])+'</div>';
+  }
+  if(sections['NEXT STEP']){
+    html += '<div class="ans-block ans-next"><span class="ans-label">Next step</span>'+bulletList(sections['NEXT STEP'])+'</div>';
+  }
+  if(sections['SOURCE']){
+    html += '<div class="ans-source">Source: '+esc(sections['SOURCE'])+'</div>';
+  }
+  return html;
+}
+
 function addMessage(role, text, pending, error){
   if(emptyState) emptyState.style.display='none';
   var msg=document.createElement('div');
@@ -132,15 +208,7 @@ function addMessage(role, text, pending, error){
   bubble.className='msg-bubble'+(pending?' pending':'')+(error?' error':'');
 
   if(role==='assistant' && !pending && !error){
-    // split off a trailing "Source: ..." line into a styled citation block
-    var parts = text.split(/\n(?=Source:)/i);
-    bubble.textContent = parts[0];
-    if(parts[1]){
-      var cite=document.createElement('span');
-      cite.className='cite';
-      cite.textContent = parts[1];
-      bubble.appendChild(cite);
-    }
+    bubble.innerHTML = formatStructuredAnswer(text);
   } else {
     bubble.textContent = text;
   }
