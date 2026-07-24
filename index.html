@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document Consoles</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --ink:#161f22;--ink-2:#1f2e32;
+  --surface:#ffffff;--paper:#f0f5f4;--paper-2:#f7fafa;
+  --line:#dbe6e5;--line-s:#c1d3d2;
+  --teal:#0a7c6e;--teal-d:#085f54;--teal-s:#e0f0ee;
+  --muted:#567078;--muted-2:#7a9198;
+  --accept:#166534;--accept-bg:#eaf6ee;--accept-line:#b6dfc2;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--sans);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+
+/* ── LAUNCHER ── */
+#launcher{height:100%;display:flex;flex-direction:column}
+
+.top-bar{background:var(--ink-2);padding:13px 14px 12px;display:flex;align-items:center;gap:10px;flex:0 0 auto}
+.top-bar-glyph{width:28px;height:28px;border-radius:6px;background:linear-gradient(150deg,#0a7c6e,#085f54);display:grid;place-items:center;flex:0 0 auto}
+.top-bar-glyph svg{width:15px;height:15px;color:#fff}
+.top-bar-title{font-size:13px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.top-bar-sub{font-size:10.5px;color:#7fbdb6;margin-top:1px;font-weight:500}
+
+.search-wrap{padding:10px 12px;border-bottom:1px solid var(--line);flex:0 0 auto;background:var(--surface)}
+.search{width:100%;font-family:var(--sans);font-size:12.5px;border:1px solid var(--line-s);border-radius:7px;padding:7px 10px 7px 30px;background:var(--paper) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' viewBox='0 0 24 24'%3E%3Ccircle cx='11' cy='11' r='7' stroke='%237a9198' stroke-width='2'/%3E%3Cpath d='m16 16 4 4' stroke='%237a9198' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 9px center;color:var(--ink);outline:none;transition:.12s}
+.search:focus{border-color:var(--teal);background-color:var(--surface)}
+.search::placeholder{color:var(--muted-2)}
+
+.list{flex:1;overflow-y:auto;padding:8px 0}
+.section-label{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--muted-2);padding:10px 14px 5px;display:flex;align-items:center;gap:6px}
+.section-label::after{content:'';flex:1;height:1px;background:var(--line)}
+
+.console-btn{width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:8px 14px;display:flex;align-items:center;gap:10px;transition:.1s;border-left:2px solid transparent}
+.console-btn:hover{background:var(--teal-s);border-left-color:var(--teal)}
+.console-btn.active{background:var(--teal-s);border-left-color:var(--teal)}
+.console-btn.hidden-item{display:none}
+.cb-icon{width:30px;height:30px;border-radius:7px;background:var(--paper);border:1px solid var(--line);display:grid;place-items:center;flex:0 0 auto;font-size:13px;transition:.1s}
+.console-btn:hover .cb-icon,.console-btn.active .cb-icon{background:var(--teal-s);border-color:var(--teal-s)}
+.cb-text{flex:1;min-width:0}
+.cb-name{font-size:12.5px;font-weight:600;color:var(--ink-2);line-height:1.2}
+.console-btn:hover .cb-name,.console-btn.active .cb-name{color:var(--teal-d)}
+.cb-tag{font-size:10px;color:var(--muted);font-family:var(--mono);margin-top:2px}
+.cb-arrow{color:var(--muted-2);flex:0 0 auto;transition:.1s}
+.console-btn:hover .cb-arrow,.console-btn.active .cb-arrow{color:var(--teal)}
+
+.empty-state{padding:32px 14px;text-align:center;color:var(--muted);font-size:12px}
+.empty-state svg{width:28px;height:28px;color:var(--line-s);margin:0 auto 8px;display:block}
+
+/* ── CONSOLE VIEW ── */
+#console-view{height:100%;display:flex;flex-direction:column;display:none}
+
+.console-bar{background:var(--ink-2);padding:10px 12px;display:flex;align-items:center;gap:9px;flex:0 0 auto}
+.back-btn{background:none;border:none;cursor:pointer;color:#7fbdb6;display:flex;align-items:center;gap:5px;font-family:var(--sans);font-size:11.5px;font-weight:600;padding:4px 6px;border-radius:5px;transition:.12s}
+.back-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.back-btn svg{width:13px;height:13px}
+.console-bar-name{font-size:12.5px;font-weight:700;color:#fff;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.console-bar-tag{font-family:var(--mono);font-size:10px;color:#5fa39c;background:rgba(95,163,156,.15);padding:2px 7px;border-radius:4px;flex:0 0 auto}
+
+#console-frame{flex:1;border:none;width:100%;background:var(--surface)}
+</style>
+
+<!-- LAUNCHER -->
+<div id="launcher">
+  <div class="top-bar">
+    <div class="top-bar-glyph">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 12h6M9 8h6M9 16h4M5 4h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </div>
+    <div>
+      <div class="top-bar-title">Document Consoles</div>
+      <div class="top-bar-sub">Select the document type to validate</div>
+    </div>
+  </div>
+
+  <div class="search-wrap">
+    <input class="search" id="search" type="text" placeholder="Search consoles…" autocomplete="off">
+  </div>
+
+  <div class="list" id="list">
+
+    <div class="section-label">Health Screening</div>
+
+    <button class="console-btn" data-url="hepb-console.html" data-name="Hep B Console" data-tag="Hep B Documentation" type="button">
+      <div class="cb-icon">🧬</div>
+      <div class="cb-text">
+        <div class="cb-name">Hep B Documentation</div>
+        <div class="cb-tag">Hep B Documentation OR Declination</div>
+      </div>
+      <svg class="cb-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <button class="console-btn" data-url="tb-validation-console.html" data-name="TB Test Console" data-tag="TB Test / PPD / QFT / CXR" type="button">
+      <div class="cb-icon">🫁</div>
+      <div class="cb-text">
+        <div class="cb-name">TB Test</div>
+        <div class="cb-tag">TB Test / PPD / QFT / CXR</div>
+      </div>
+      <svg class="cb-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <div class="section-label">Background Checks</div>
+
+    <button class="console-btn" data-url="#" data-name="National Background Check" data-tag="Checkr" data-coming="true" type="button">
+      <div class="cb-icon">🔍</div>
+      <div class="cb-text">
+        <div class="cb-name">National Background Check</div>
+        <div class="cb-tag">Checkr · coming soon</div>
+      </div>
+      <svg class="cb-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <button class="console-btn" data-url="#" data-name="Florida Level 2" data-tag="FL Background Check" data-coming="true" type="button">
+      <div class="cb-icon">🔍</div>
+      <div class="cb-text">
+        <div class="cb-name">Florida Level 2</div>
+        <div class="cb-tag">FL Background Check · coming soon</div>
+      </div>
+      <svg class="cb-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <div class="section-label">Certifications</div>
+
+    <button class="console-btn" data-url="#" data-name="BLS / CPR" data-tag="BLS or CPR: In-Person" data-coming="true" type="button">
+      <div class="cb-icon">❤️</div>
+      <div class="cb-text">
+        <div class="cb-name">BLS / CPR</div>
+        <div class="cb-tag">BLS or CPR: In-Person · coming soon</div>
+      </div>
+      <svg class="cb-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <button class="console-btn" data-url="#" data-name="Physical with Fit to Work" data-tag="Physical Exam" data-coming="true" type="button">
+      <div class="cb-icon">📋</div>
+      <div class="cb-text">
+        <div class="cb-name">Physical with Fit to Work</div>
+        <div class="cb-tag">Physical Exam · coming soon</div>
+      </div>
+      <svg class="cb-arrow" viewBox="0 0 24 24" fill="none" width="14" height="14"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+
+    <div id="no-results" class="empty-state" style="display:none">
+      <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="1.6"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      No consoles match your search
+    </div>
+
+  </div>
+</div>
+
+<!-- CONSOLE VIEW -->
+<div id="console-view">
+  <div class="console-bar">
+    <button class="back-btn" id="backBtn" type="button">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      All consoles
+    </button>
+    <div class="console-bar-name" id="consoleName"></div>
+    <div class="console-bar-tag" id="consoleTag"></div>
+  </div>
+  <iframe id="console-frame" src="" title="Document Console"></iframe>
+</div>
+
+<script>
+"use strict";
+var launcher=document.getElementById('launcher');
+var consoleView=document.getElementById('console-view');
+var frame=document.getElementById('console-frame');
+var consoleName=document.getElementById('consoleName');
+var consoleTag=document.getElementById('consoleTag');
+var search=document.getElementById('search');
+var noResults=document.getElementById('no-results');
+
+document.querySelectorAll('.console-btn').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var coming=btn.getAttribute('data-coming');
+    if(coming==='true') return; // not yet built
+    var url=btn.getAttribute('data-url');
+    var name=btn.getAttribute('data-name');
+    var tag=btn.getAttribute('data-tag');
+    consoleName.textContent=name;
+    consoleTag.textContent=tag;
+    frame.src=url;
+    launcher.style.display='none';
+    consoleView.style.display='flex';
+    document.querySelectorAll('.console-btn').forEach(function(b){b.classList.remove('active');});
+    btn.classList.add('active');
+  });
+});
+
+document.getElementById('backBtn').addEventListener('click',function(){
+  consoleView.style.display='none';
+  launcher.style.display='flex';
+  frame.src='';
+});
+
+search.addEventListener('input',function(){
+  var q=search.value.toLowerCase().trim();
+  var btns=document.querySelectorAll('.console-btn');
+  var any=false;
+  btns.forEach(function(btn){
+    var name=btn.getAttribute('data-name').toLowerCase();
+    var tag=btn.getAttribute('data-tag').toLowerCase();
+    var match=!q||name.includes(q)||tag.includes(q);
+    btn.classList.toggle('hidden-item',!match);
+    if(match) any=true;
+  });
+  noResults.style.display=any?'none':'block';
+  // hide section labels if all items in section are hidden
+  document.querySelectorAll('.section-label').forEach(function(label){
+    var next=label.nextElementSibling;
+    var allHidden=true;
+    while(next&&!next.classList.contains('section-label')){
+      if(next.classList.contains('console-btn')&&!next.classList.contains('hidden-item')) allHidden=false;
+      next=next.nextElementSibling;
+    }
+    label.style.display=allHidden?'none':'';
+  });
+});
+</script>
