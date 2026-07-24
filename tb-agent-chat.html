@@ -157,13 +157,38 @@ function verdictClass(v){
   return 'info';
 }
 
+// For non-verdict answers (how-to / logistics questions). Groups consecutive
+// "- " lines into a <ul>, everything else stays as plain paragraph text.
+function renderPlainWithBullets(text){
+  var lines = text.split('\n');
+  var html = '';
+  var bulletBuf = [];
+  function flushBullets(){
+    if(bulletBuf.length){
+      html += '<ul>' + bulletBuf.map(function(b){return '<li>'+esc(b)+'</li>';}).join('') + '</ul>';
+      bulletBuf = [];
+    }
+  }
+  lines.forEach(function(line){
+    var trimmed = line.trim();
+    if(/^[-•*]\s+/.test(trimmed)){
+      bulletBuf.push(trimmed.replace(/^[-•*]\s+/, ''));
+    } else {
+      flushBullets();
+      if(trimmed) html += '<p style="margin:0 0 8px">'+esc(trimmed)+'</p>';
+    }
+  });
+  flushBullets();
+  return html || '<div></div>';
+}
+
 // Parses the VERDICT / WHY / NEXT STEP / SOURCE template. If none of those
 // labels are present (e.g. the model asked a clarifying question instead of
 // giving a verdict), falls back to plain rendered text.
 function formatStructuredAnswer(text){
   var hasTemplate = /VERDICT\s*:/i.test(text);
   if(!hasTemplate){
-    return '<div>' + esc(text).replace(/\n/g,'<br>') + '</div>';
+    return renderPlainWithBullets(text);
   }
 
   var sections = {};
