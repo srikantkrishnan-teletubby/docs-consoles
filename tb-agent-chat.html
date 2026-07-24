@@ -65,6 +65,12 @@ html,body{height:100%;font-family:var(--sans);color:var(--ink);background:var(--
 .ans-next li{margin:2px 0}
 .ans-source{font-family:var(--mono);font-size:11px;color:var(--muted-2);padding-top:8px;margin-top:2px;border-top:1px solid var(--line)}
 
+.reply-draft{margin:10px 0;border-radius:8px;padding:11px 12px;background:var(--paper-2);border:1px solid var(--line-s)}
+.reply-draft-label{font-family:var(--mono);font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--teal-d);margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.reply-draft-text{font-size:13px;line-height:1.55;white-space:pre-wrap;color:var(--ink-2)}
+.reply-copy-btn{font-family:var(--sans);font-size:11px;font-weight:600;background:var(--surface);color:var(--teal-d);border:1px solid var(--line-s);border-radius:5px;padding:4px 10px;cursor:pointer}
+.reply-copy-btn:hover{background:var(--teal-s)}
+
 .empty-state{text-align:center;color:var(--muted);padding:60px 20px;font-size:13px;line-height:1.6}
 .empty-state b{color:var(--ink-2)}
 .examples{margin-top:16px;display:flex;flex-direction:column;gap:6px;align-items:center}
@@ -186,14 +192,13 @@ function renderPlainWithBullets(text){
 // labels are present (e.g. the model asked a clarifying question instead of
 // giving a verdict), falls back to plain rendered text.
 function formatStructuredAnswer(text){
-  var hasTemplate = /VERDICT\s*:/i.test(text);
+  var hasTemplate = /VERDICT\s*:/i.test(text) || /REPLY DRAFT\s*:/i.test(text);
   if(!hasTemplate){
     return renderPlainWithBullets(text);
   }
 
   var sections = {};
-  var order = ['VERDICT','WHY','NEXT STEP','SOURCE'];
-  var pattern = /(VERDICT|WHY|NEXT STEP|SOURCE)\s*:\s*/gi;
+  var pattern = /(VERDICT|WHY|NEXT STEP|REPLY DRAFT|SOURCE)\s*:\s*/gi;
   var matches = [];
   var m;
   while((m = pattern.exec(text)) !== null){
@@ -215,6 +220,15 @@ function formatStructuredAnswer(text){
   }
   if(sections['NEXT STEP']){
     html += '<div class="ans-block ans-next"><span class="ans-label">Next step</span>'+bulletList(sections['NEXT STEP'])+'</div>';
+  }
+  if(sections['REPLY DRAFT']){
+    var draftText = sections['REPLY DRAFT'];
+    var draftId = 'draft-' + Math.random().toString(36).slice(2,9);
+    html += '<div class="reply-draft">'
+      + '<div class="reply-draft-label"><span>Reply draft</span>'
+      + '<button class="reply-copy-btn" data-copy-target="'+draftId+'" type="button">Copy</button></div>'
+      + '<div class="reply-draft-text" id="'+draftId+'">'+esc(draftText)+'</div>'
+      + '</div>';
   }
   if(sections['SOURCE']){
     html += '<div class="ans-source">Source: '+esc(sections['SOURCE'])+'</div>';
@@ -282,6 +296,22 @@ function send(){
 }
 
 sendBtn.addEventListener('click', send);
+
+messagesEl.addEventListener('click', function(e){
+  var btn = e.target.closest('.reply-copy-btn');
+  if(!btn) return;
+  var targetId = btn.getAttribute('data-copy-target');
+  var el = document.getElementById(targetId);
+  if(!el) return;
+  var text = el.textContent;
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text).then(function(){
+      var orig = btn.textContent;
+      btn.textContent = 'Copied';
+      setTimeout(function(){ btn.textContent = orig; }, 1200);
+    });
+  }
+});
 input.addEventListener('keydown', function(e){
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); send(); }
 });
