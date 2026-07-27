@@ -528,8 +528,9 @@ function fmtDate(str,years){
   if(!str)return null;
   var d=new Date(str+'T00:00:00');if(isNaN(d.getTime()))return null;
   d.setFullYear(d.getFullYear()+years);
-  var m=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-  return m[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+  var mm=String(d.getMonth()+1).padStart(2,'0');
+  var dd=String(d.getDate()).padStart(2,'0');
+  return mm+'/'+dd+'/'+d.getFullYear();
 }
 
 /* BLOOD LOGIC — unchanged from v5 (SOP revised June 2026) */
